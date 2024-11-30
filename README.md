@@ -5,20 +5,22 @@
 
 ## Comparison to Other Parsing Libraries
 
-| Original PDF |
-|--------------|
+| Original PDF                                                                                                         |
+| -------------------------------------------------------------------------------------------------------------------- |
 | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/original.png" width="500"/> |
 
-| Docling-API | Marker |
-|-------------|--------|
+| Docling-API                                                                                                         | Marker                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/docling.png" width="500"/> | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/marker.png" width="500"/> |
 
-| PyPDF | PyMuPDF4LLM |
-|-------|-------------|
+| PyPDF                                                                                                             | PyMuPDF4LLM                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/pypdf.png" width="500"/> | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/pymupdf.png" width="500"/> |
 
 ## Features
+
 - **Multiple Format Support**: Converts various document types including:
+
   - PDF files
   - Microsoft Word documents (DOCX)
   - PowerPoint presentations (PPTX)
@@ -26,8 +28,10 @@
   - Images (JPG, PNG, TIFF, BMP)
   - AsciiDoc files
   - Markdown files
+  - URLs
 
 - **Conversion Capabilities**:
+
   - Text extraction and formatting
   - Table detection, extraction and conversion
   - Image extraction and processing
@@ -35,6 +39,7 @@
   - Configurable image resolution scaling
 
 - **API Endpoints**:
+
   - Synchronous single document conversion
   - Synchronous batch document conversion
   - Asynchronous single document conversion with job tracking
@@ -49,16 +54,19 @@
 ## Environment Setup (Running Locally)
 
 ### Prerequisites
+
 - Python 3.8 or higher
 - Poetry (Python package manager)
 - Redis server (for task queue)
 
 ### 1. Install Poetry (if not already installed)
+
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
 ### 2. Clone and Setup Project
+
 ```bash
 git clone https://github.com/drmingler/docling-api.git
 cd document-converter
@@ -66,22 +74,27 @@ poetry install
 ```
 
 ### 3. Configure Environment
+
 Create a `.env` file in the project root:
+
 ```bash
 REDIS_HOST=redis://localhost:6379/0
 ENV=development
 ```
 
 ### 4. Start Redis Server
+
 Start Redis locally (install if not already installed):
 
 #### For MacOS:
+
 ```bash
 brew install redis
 brew services start redis
 ```
 
 #### For Ubuntu/Debian:
+
 ```bash
 sudo apt-get install redis-server
 sudo service redis-server start
@@ -90,16 +103,19 @@ sudo service redis-server start
 ### 5. Start the Application Components
 
 1. Start the FastAPI server:
+
 ```bash
 poetry run uvicorn main:app --reload --port 8080
 ```
 
 2. Start Celery worker (in a new terminal):
+
 ```bash
 poetry run celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
 ```
 
 3. Start Flower dashboard for monitoring (optional, in a new terminal):
+
 ```bash
 poetry run celery -A worker.celery_config flower --port=5555
 ```
@@ -107,11 +123,13 @@ poetry run celery -A worker.celery_config flower --port=5555
 ### 6. Verify Installation
 
 1. Check if the API server is running:
+
 ```bash
 curl http://localhost:8080/docs
 ```
 
 2. Test Celery worker:
+
 ```bash
 curl -X POST "http://localhost:8080/documents/convert" \
   -H "accept: application/json" \
@@ -120,6 +138,7 @@ curl -X POST "http://localhost:8080/documents/convert" \
 ```
 
 3. Access monitoring dashboard:
+
 - Open http://localhost:5555 in your browser to view the Flower dashboard
 
 ### Development Notes
@@ -132,25 +151,31 @@ curl -X POST "http://localhost:8080/documents/convert" \
 ## Environment Setup (Running in Docker)
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/drmingler/docling-api.git
 cd document-converter
 ```
 
 2. Create a `.env` file:
+
 ```bash
 REDIS_HOST=redis://redis:6379/0
 ENV=production
 ```
 
 ### CPU Mode
+
 To start the service using CPU-only processing, use the following command. You can adjust the number of Celery workers by specifying the --scale option. In this example, 1 worker will be created:
+
 ```bash
 docker-compose -f docker-compose.cpu.yml up --build --scale celery_worker=1
 ```
 
 ### GPU Mode (Recommend for production)
+
 For production, it is recommended to enable GPU acceleration, as it significantly improves performance. Use the command below to start the service with GPU support. You can also scale the number of Celery workers using the --scale option; here, 3 workers will be launched:
+
 ```bash
 docker-compose -f docker-compose.gpu.yml up --build --scale celery_worker=3
 ```
@@ -237,9 +262,11 @@ The service uses a distributed architecture with the following components:
 - Multiple workers can be scaled horizontally for increased throughput
 
 ## License
+
 The codebase is under MIT license. See LICENSE for more information
 
 ## Acknowledgements
+
 - [Docling](https://github.com/DS4SD/docling) the state-of-the-art document conversion library by IBM
 - [FastAPI](https://fastapi.tiangolo.com/) the web framework
 - [Celery](https://docs.celeryq.dev/en/stable/) for distributed task processing

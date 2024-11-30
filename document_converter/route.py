@@ -1,7 +1,8 @@
 from io import BytesIO
 from multiprocessing.pool import AsyncResult
 from typing import List
-from fastapi import APIRouter, File, HTTPException, UploadFile, Query
+from fastapi import APIRouter, File, HTTPException, UploadFile, Query, Body
+from pydantic import HttpUrl
 
 from document_converter.schema import BatchConversionJobResult, ConversationJobResult, ConversionResult
 from document_converter.service import DocumentConverterService, DoclingDocumentConversion
@@ -23,16 +24,23 @@ document_converter_service = DocumentConverterService(document_converter=convert
     description="Convert a single document synchronously",
 )
 async def convert_single_document(
-    document: UploadFile = File(...),
+    document: UploadFile = File(None),
+    url: HttpUrl = Body(None),
     extract_tables_as_images: bool = False,
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
-    file_bytes = await document.read()
-    if not is_file_format_supported(file_bytes, document.filename):
-        raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
+    if document:
+        file_bytes = await document.read()
+        if not is_file_format_supported(file_bytes, document.filename):
+            raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
+        doc_input = (document.filename, BytesIO(file_bytes))
+    elif url:
+        doc_input = str(url)
+    else:
+        raise HTTPException(status_code=400, detail="Either document or url must be provided")
 
     return document_converter_service.convert_document(
-        (document.filename, BytesIO(file_bytes)),
+        doc_input,
         extract_tables=extract_tables_as_images,
         image_resolution_scale=image_resolution_scale,
     )
@@ -45,19 +53,25 @@ async def convert_single_document(
     description="Convert multiple documents synchronously",
 )
 async def convert_multiple_documents(
-    documents: List[UploadFile] = File(...),
+    documents: List[UploadFile] = File(None),
+    urls: List[HttpUrl] = Body(None),
     extract_tables_as_images: bool = False,
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
-    doc_streams = []
-    for document in documents:
-        file_bytes = await document.read()
-        if not is_file_format_supported(file_bytes, document.filename):
-            raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
-        doc_streams.append((document.filename, BytesIO(file_bytes)))
+    if documents:
+        doc_inputs = []
+        for document in documents:
+            file_bytes = await document.read()
+            if not is_file_format_supported(file_bytes, document.filename):
+                raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
+            doc_inputs.append((document.filename, BytesIO(file_bytes)))
+    elif urls:
+        doc_inputs = [str(url) for url in urls]
+    else:
+        raise HTTPException(status_code=400, detail="Either documents or urls must be provided")
 
     return document_converter_service.convert_documents(
-        doc_streams,
+        doc_inputs,
         extract_tables=extract_tables_as_images,
         image_resolution_scale=image_resolution_scale,
     )
@@ -70,16 +84,23 @@ async def convert_multiple_documents(
     description="Create a conversion job for a single document",
 )
 async def create_single_document_conversion_job(
-    document: UploadFile = File(...),
+    document: UploadFile = File(None),
+    url: HttpUrl = Body(None),
     extract_tables_as_images: bool = False,
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
-    file_bytes = await document.read()
-    if not is_file_format_supported(file_bytes, document.filename):
-        raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
+    if document:
+        file_bytes = await document.read()
+        if not is_file_format_supported(file_bytes, document.filename):
+            raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
+        doc_input = (document.filename, file_bytes)
+    elif url:
+        doc_input = str(url)
+    else:
+        raise HTTPException(status_code=400, detail="Either document or url must be provided")
 
     task = convert_document_task.delay(
-        (document.filename, file_bytes),
+        doc_input,
         extract_tables=extract_tables_as_images,
         image_resolution_scale=image_resolution_scale,
     )
@@ -104,20 +125,25 @@ async def get_conversion_job_status(job_id: str):
     description="Create a conversion job for multiple documents",
 )
 async def create_batch_conversion_job(
-    documents: List[UploadFile] = File(...),
+    documents: List[UploadFile] = File(None),
+    urls: List[HttpUrl] = Body(None),
     extract_tables_as_images: bool = False,
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
-    """Create a batch conversion job for multiple documents."""
-    doc_data = []
-    for document in documents:
-        file_bytes = await document.read()
-        if not is_file_format_supported(file_bytes, document.filename):
-            raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
-        doc_data.append((document.filename, file_bytes))
+    if documents:
+        doc_inputs = []
+        for document in documents:
+            file_bytes = await document.read()
+            if not is_file_format_supported(file_bytes, document.filename):
+                raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
+            doc_inputs.append((document.filename, file_bytes))
+    elif urls:
+        doc_inputs = [str(url) for url in urls]
+    else:
+        raise HTTPException(status_code=400, detail="Either documents or urls must be provided")
 
     task = convert_documents_task.delay(
-        doc_data,
+        doc_inputs,
         extract_tables=extract_tables_as_images,
         image_resolution_scale=image_resolution_scale,
     )
