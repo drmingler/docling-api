@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 from document_converter.service import IMAGE_RESOLUTION_SCALE, DoclingDocumentConversion, DocumentConverterService
 from worker.celery_config import celery_app
 
@@ -12,7 +12,7 @@ def ping():
 @celery_app.task(bind=True, name="convert_document")
 def convert_document_task(
     self,
-    document: Tuple[str, bytes],
+    document: Union[Tuple[str, bytes], str],
     extract_tables: bool = False,
     image_resolution_scale: int = IMAGE_RESOLUTION_SCALE,
 ) -> Dict[str, Any]:
@@ -26,7 +26,7 @@ def convert_document_task(
 @celery_app.task(bind=True, name="convert_documents")
 def convert_documents_task(
     self,
-    documents: List[Tuple[str, bytes]],
+    documents: List[Union[Tuple[str, bytes], str]],
     extract_tables: bool = False,
     image_resolution_scale: int = IMAGE_RESOLUTION_SCALE,
 ) -> List[Dict[str, Any]]:
