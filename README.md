@@ -61,7 +61,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 ### 2. Clone and Setup Project
 ```bash
 git clone https://github.com/drmingler/docling-api.git
-cd document-converter
+cd docling-api
 poetry install
 ```
 
@@ -134,7 +134,7 @@ curl -X POST "http://localhost:8080/documents/convert" \
 1. Clone the repository:
 ```bash
 git clone https://github.com/drmingler/docling-api.git
-cd document-converter
+cd docling-api
 ```
 
 2. Create a `.env` file:
