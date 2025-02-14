@@ -13,6 +13,7 @@
 /out/
 /target/
 /build/
+.idea/
 .idea/libraries/
 .idea/modules.xml
 .idea/misc.xml
@@ -32,3 +33,8 @@ htmlcov/
 .venv/
 venv/
 env/
+
+# Runtime artifacts
+dump.rdb
+*.log
+output.md
