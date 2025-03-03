@@ -7,7 +7,7 @@ services:
       args:
         CPU_ONLY: "false"
     image: converter-gpu-image
-    command: poetry run celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
     volumes:
       - .:/app
     environment:
@@ -19,7 +19,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     depends_on:
       - redis
 
@@ -30,7 +30,7 @@ services:
       args:
         CPU_ONLY: "false"
     image: converter-gpu-image
-    command: poetry run uvicorn --port 8080 --host 0.0.0.0 main:app
+    command: uvicorn --port 8080 --host 0.0.0.0 main:app
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
@@ -45,7 +45,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     depends_on:
       - redis
       - celery_worker
@@ -63,7 +63,7 @@ services:
       args:
         CPU_ONLY: "false"
     image: converter-gpu-image
-    command: poetry run celery -A worker.celery_config flower --port=5555
+    command: celery -A worker.celery_config flower --port=5555
     ports:
       - "5556:5555"
     volumes:
@@ -81,4 +81,4 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]

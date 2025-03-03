@@ -8,20 +8,20 @@ RUN apt-get update \
     && apt-get install -y redis-server libgl1 libglib2.0-0 curl wget git procps \
     && apt-get clean
 
-# Install Poetry and configure it
-RUN pip install poetry \
-    && poetry config virtualenvs.create false
+# Install UV
+RUN pip install uv
 
-COPY pyproject.toml poetry.lock ./
+# Copy project files needed for installation
+COPY pyproject.toml README.md ./
 
 # Install dependencies before torch
-RUN poetry install --no-interaction --no-root
+RUN uv pip install --system -e .
 
 # Install PyTorch separately based on CPU_ONLY flag
 RUN if [ "$CPU_ONLY" = "true" ]; then \
-    pip install --no-cache-dir torch torchvision --extra-index-url https://download.pytorch.org/whl/cpu; \
+    uv pip install --system --no-cache-dir torch torchvision --extra-index-url https://download.pytorch.org/whl/cpu; \
     else \
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
+    uv pip install --system torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
     fi
 
 ENV HF_HOME=/tmp/ \
@@ -39,4 +39,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["poetry", "run", "uvicorn", "--port", "8080", "--host", "0.0.0.0", "main:app"]
+CMD ["uvicorn", "--port", "8080", "--host", "0.0.0.0", "main:app"]
