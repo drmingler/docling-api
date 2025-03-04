@@ -1,18 +1,23 @@
-version: "3.8"
-
 services:
   celery_worker:
     build:
       context: .
       args:
         CPU_ONLY: "false"
+      target: runtime
     image: converter-gpu-image
-    command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    command: python -m celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
     volumes:
       - .:/app
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
+    healthcheck:
+      test: [ "CMD", "python", "-m", "celery", "-A", "worker.celery_config", "inspect", "ping", "-d", "celery@worker_primary" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     deploy:
       resources:
         reservations:
@@ -29,8 +34,11 @@ services:
       context: .
       args:
         CPU_ONLY: "false"
+      target: runtime
+      cache_from:
+        - converter-gpu-image
     image: converter-gpu-image
-    command: uvicorn --port 8080 --host 0.0.0.0 main:app
+    command: python -m uvicorn main:app --port 8080 --host 0.0.0.0 --workers 4 --proxy-headers
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
@@ -39,6 +47,12 @@ services:
       - "8080:8080"
     volumes:
       - .:/app
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     deploy:
       resources:
         reservations:
@@ -55,6 +69,12 @@ services:
     image: redis:7.2.4-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   flower:
     container_name: flower_gpu
@@ -62,8 +82,11 @@ services:
       context: .
       args:
         CPU_ONLY: "false"
+      target: runtime
+      cache_from:
+        - converter-gpu-image
     image: converter-gpu-image
-    command: celery -A worker.celery_config flower --port=5555
+    command: python -m celery -A worker.celery_config flower --port=5555
     ports:
       - "5556:5555"
     volumes:
@@ -82,3 +105,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+
+volumes:
+  model_cache:
+    name: docling_model_cache

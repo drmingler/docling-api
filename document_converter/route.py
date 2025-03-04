@@ -133,3 +133,29 @@ async def create_batch_conversion_job(
 async def get_batch_conversion_job_status(job_id: str):
     """Get the status and results of a batch conversion job."""
     return document_converter_service.get_batch_conversion_task_result(job_id)
+
+@router.get("/health")
+async def health_check():
+    try:
+        # Check Celery/Redis connection by sending a ping task
+        result = ping.delay()
+        response = result.get(timeout=3)  # Wait up to 3 seconds for response
+        
+        if response != "pong":
+            raise HTTPException(
+                status_code=500,
+                detail="Celery/Redis connection test failed"
+            )
+            
+        return {
+            "status": "healthy",
+            "celery": "connected",
+            "redis": "connected",
+            "docling": "connected",
+            "document_converter_service": "connected",
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Health check failed: {str(e)}"
+        )

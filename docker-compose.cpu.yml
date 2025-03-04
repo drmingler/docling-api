@@ -1,20 +1,24 @@
-version: "3.8"
-
 services:
   celery_worker:
     build:
       context: .
       args:
         CPU_ONLY: "true"
+      target: runtime
     image: converter-cpu-image
-    command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    command: /app/.venv/bin/python -m celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
     volumes:
-      - .:/app
-      - model_cache:/tmp
+      - ./worker:/app/worker
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
     restart: on-failure
+    healthcheck:
+      test: [ "CMD", "/app/.venv/bin/celery", "-A", "worker.celery_config", "inspect", "ping", "-d", "celery@worker_primary" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     depends_on:
       - redis
 
@@ -24,8 +28,11 @@ services:
       context: .
       args:
         CPU_ONLY: "true"
+      target: runtime
+      cache_from:
+        - converter-cpu-image
     image: converter-cpu-image
-    command: uvicorn --port 8080 --host 0.0.0.0 main:app
+    command: /app/.venv/bin/python -m uvicorn main:app --port 8080 --host 0.0.0.0 --workers 4 --proxy-headers
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
@@ -35,9 +42,14 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - .:/app
-      - model_cache:/tmp
+      - ./main.py:/app/main.py
     restart: on-failure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     depends_on:
       - redis
 
@@ -46,6 +58,12 @@ services:
     image: redis:7.2.4-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   flower:
     container_name: flower_cpu
@@ -53,13 +71,15 @@ services:
       context: .
       args:
         CPU_ONLY: "true"
+      target: runtime
+      cache_from:
+        - converter-cpu-image
     image: converter-cpu-image
-    command: celery -A worker.celery_config flower --port=5555
+    command: /app/.venv/bin/python -m celery -A worker.celery_config flower --port=5555
     ports:
       - "5556:5555"
     volumes:
-      - .:/app
-      - model_cache:/tmp
+      - ./worker:/app/worker
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
@@ -70,3 +90,4 @@ services:
 
 volumes:
   model_cache:
+    name: docling_model_cache
