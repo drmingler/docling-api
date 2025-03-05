@@ -1,6 +1,7 @@
+from io import BytesIO
 import re
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 import filetype
 
@@ -13,6 +14,7 @@ class InputFormat(str, Enum):
     PDF = "pdf"
     ASCIIDOC = "asciidoc"
     MD = "md"
+    CSV = "csv"
 
 
 class OutputFormat(str, Enum):
@@ -30,6 +32,7 @@ FormatToExtensions: Dict[InputFormat, List[str]] = {
     InputFormat.HTML: ["html", "htm", "xhtml"],
     InputFormat.IMAGE: ["jpg", "jpeg", "png", "tif", "tiff", "bmp"],
     InputFormat.ASCIIDOC: ["adoc", "asciidoc", "asc"],
+    InputFormat.CSV: ["csv"],
 }
 
 FormatToMimeType: Dict[InputFormat, List[str]] = {
@@ -53,6 +56,7 @@ FormatToMimeType: Dict[InputFormat, List[str]] = {
     InputFormat.PDF: ["application/pdf"],
     InputFormat.ASCIIDOC: ["text/asciidoc"],
     InputFormat.MD: ["text/markdown", "text/x-markdown"],
+    InputFormat.CSV: ["text/csv"],
 }
 MimeTypeToFormat = {mime: fmt for fmt, mimes in FormatToMimeType.items() for mime in mimes}
 
@@ -73,12 +77,21 @@ def detect_html_xhtml(content):
     return None
 
 
+def is_csv_file(filename: str) -> bool:
+    """Check if a file is a CSV based on its extension."""
+    return filename and filename.lower().endswith('.csv')
+
+
 def guess_format(obj: bytes, filename: str = None):
-    content = b""  # empty binary blob
+    content = b""
     mime = None
 
     if isinstance(obj, bytes):
         content = obj
+        # Special handling for CSV files
+        if is_csv_file(filename):
+            return InputFormat.CSV
+
         mime = filetype.guess_mime(content)
         if mime is None:
             ext = filename.rsplit(".", 1)[-1] if ("." in filename and not filename.startswith(".")) else ""
@@ -89,6 +102,23 @@ def guess_format(obj: bytes, filename: str = None):
     return MimeTypeToFormat.get(mime)
 
 
+def handle_csv_file(file: BytesIO) -> Tuple[BytesIO, Optional[str]]:
+    """Handle CSV file encoding by trying multiple encodings.
+
+    Returns:
+        Tuple[BytesIO, Optional[str]]: (processed file, error message if any)
+    """
+    SUPPORTED_CSV_ENCODINGS = ['utf-8', 'latin1', 'cp1252', 'iso-8859-1']
+    for encoding in SUPPORTED_CSV_ENCODINGS:
+        try:
+            file.seek(0)
+            content = file.read().decode(encoding)
+            return BytesIO(content.encode('utf-8')), None
+        except UnicodeDecodeError:
+            continue
+    return file, f"Could not decode CSV file. Supported encodings: {', '.join(SUPPORTED_CSV_ENCODINGS)}"
+
+
 def mime_from_extension(ext):
     mime = None
     if ext in FormatToExtensions[InputFormat.ASCIIDOC]:
@@ -97,6 +127,8 @@ def mime_from_extension(ext):
         mime = FormatToMimeType[InputFormat.HTML][0]
     elif ext in FormatToExtensions[InputFormat.MD]:
         mime = FormatToMimeType[InputFormat.MD][0]
+    elif ext in FormatToExtensions[InputFormat.CSV]:
+        mime = FormatToMimeType[InputFormat.CSV][0]
 
     return mime
 

@@ -10,7 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.4",
     "uvicorn>=0.32.0",
-    "docling>=2.17.0",
+    "docling>=2.25.1",
     "python-multipart>=0.0.17",
     "celery>=5.4.0",
     "flower>=2.0.1",
