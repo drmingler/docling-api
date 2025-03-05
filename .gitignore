@@ -18,3 +18,4 @@
 .idea/misc.xml
 .env
 .DS_Store
+__pycache__/
