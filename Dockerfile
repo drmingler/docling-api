@@ -8,8 +8,8 @@ RUN apt-get update && \
     apt-get install -y libgl1 libglib2.0-0 && \
     apt-get clean
 
-# Copy project for model downloads
-COPY . .
+# Copy only dependency files and README (required for package installation)
+COPY pyproject.toml uv.lock README.md ./
 
 # Create venv and install project for model downloads
 RUN python -m venv /app/.venv && \
@@ -37,8 +37,15 @@ RUN apt-get update && \
     apt-get install -y redis-server libgl1 libglib2.0-0 && \
     apt-get clean
 
-# Copy the project and models from builder
-COPY --from=builder --chown=app:app /app /app
+# Copy dependency files and models from builder
+COPY --from=builder --chown=app:app /app/.cache /app/.cache/
+COPY --from=builder --chown=app:app /app/.venv /app/.venv/
+
+# Copy project files from disk
+COPY --chown=app:app pyproject.toml uv.lock README.md ./
+COPY --chown=app:app document_converter/ ./document_converter/
+COPY --chown=app:app worker/ ./worker/
+COPY --chown=app:app main.py ./
 
 # Set up Python environment
 ENV PYTHONPATH=/app \

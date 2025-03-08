@@ -5,10 +5,8 @@ from fastapi.responses import JSONResponse
 
 from document_converter.schema import (
     BatchConversionJobResult,
-    ConversationJobResult,
-    ConversionResult,
-    JobStatus,
-    ResponseExamples
+    ConversionJobResult,
+    ConversionResult
 )
 from document_converter.service import DocumentConverterService, DoclingDocumentConversion
 from document_converter.utils import is_file_format_supported
@@ -106,7 +104,7 @@ async def convert_multiple_documents(
 # Asynchronous conversion jobs endpoints
 @router.post(
     '/conversion-jobs',
-    response_model=ConversationJobResult,
+    response_model=ConversionJobResult,
     status_code=status.HTTP_202_ACCEPTED,
     responses={
         202: {"description": "Conversion job accepted and queued"},
@@ -141,16 +139,21 @@ async def create_single_document_conversion_job(
         image_resolution_scale=image_resolution_scale,
     )
 
-    return ConversationJobResult(
+    return ConversionJobResult(
         job_id=task.id,
-        status=JobStatus.QUEUED
+        status="IN_PROGRESS"
     )
 
 
 @router.get(
     '/conversion-jobs/{job_id}',
-    response_model=ConversationJobResult,
-    responses=ResponseExamples.single_job_responses(),
+    response_model=ConversionJobResult,
+    responses={
+        200: {"description": "Conversion job completed successfully"},
+        202: {"description": "Conversion job is still in progress"},
+        404: {"description": "Job not found"},
+        422: {"description": "Conversion job failed"}
+    },
     description="Get the status and result of a single document conversion job",
 )
 async def get_conversion_job_status(job_id: str):
@@ -158,13 +161,20 @@ async def get_conversion_job_status(job_id: str):
         result = document_converter_service.get_single_document_task_result(job_id)
         
         # Return 202 Accepted if job is still in progress
-        if result.status in [JobStatus.QUEUED, JobStatus.PROCESSING]:
+        if result.status in ["IN_PROGRESS"]:
             return JSONResponse(
                 status_code=status.HTTP_202_ACCEPTED,
                 content=result.dict(exclude_none=True)
             )
             
-        # Return 200 OK for completed jobs (success or failure)
+        # Return 422 for failed jobs
+        if result.status == "FAILURE":
+            return JSONResponse(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                content=result.dict(exclude_none=True)
+            )
+            
+        # Return 200 OK for successful jobs
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=result.dict(exclude_none=True)
@@ -218,14 +228,19 @@ async def create_batch_conversion_job(
 
     return BatchConversionJobResult(
         job_id=task.id,
-        status=JobStatus.QUEUED
+        status="IN_PROGRESS"
     )
 
 
 @router.get(
     '/batch-conversion-jobs/{job_id}',
     response_model=BatchConversionJobResult,
-    responses=ResponseExamples.batch_job_responses(),
+    responses={
+        200: {"description": "All conversion jobs completed successfully"},
+        202: {"description": "Batch job is still in progress"},
+        404: {"description": "Batch job not found"},
+        422: {"description": "Batch job failed"}
+    },
     description="Get the status and results of a batch conversion job",
 )
 async def get_batch_conversion_job_status(job_id: str):
@@ -233,8 +248,8 @@ async def get_batch_conversion_job_status(job_id: str):
         result = document_converter_service.get_batch_conversion_task_result(job_id)
         
         # Return 202 Accepted if the batch job or any sub-job is still in progress
-        if result.status in [JobStatus.QUEUED, JobStatus.PROCESSING] or any(
-            job.status in [JobStatus.QUEUED, JobStatus.PROCESSING]
+        if result.status in ["IN_PROGRESS"] or any(
+            job.status in ["IN_PROGRESS"]
             for job in result.conversion_results
         ):
             return JSONResponse(
@@ -242,7 +257,17 @@ async def get_batch_conversion_job_status(job_id: str):
                 content=result.dict(exclude_none=True)
             )
             
-        # Return 200 OK for completed batch jobs (all success or some failures)
+        # Return 422 for failed batch jobs
+        if result.status == "FAILURE" or any(
+            job.status == "FAILURE"
+            for job in result.conversion_results
+        ):
+            return JSONResponse(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                content=result.dict(exclude_none=True)
+            )
+            
+        # Return 200 OK for successful batch jobs (all success)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content=result.dict(exclude_none=True)
@@ -256,7 +281,10 @@ async def get_batch_conversion_job_status(job_id: str):
 
 @router.get(
     "/health",
-    responses=ResponseExamples.health_check_responses(),
+    responses={
+        200: {"description": "All services are healthy"},
+        500: {"description": "One or more services are unhealthy"}
+    },
     description="Check the health status of all dependent services"
 )
 async def health_check():
@@ -266,14 +294,11 @@ async def health_check():
         response = result.get(timeout=3)  # Wait up to 3 seconds for response
         
         if response != "pong":
-            return JSONResponse(
+            raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={
-                    "status": "unhealthy",
-                    "detail": "Celery/Redis connection test failed"
-                }
+                detail="Celery/Redis connection test failed"
             )
-            
+        
         return {
             "status": "healthy",
             "services": {
@@ -284,16 +309,7 @@ async def health_check():
             }
         }
     except Exception as e:
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "status": "unhealthy",
-                "detail": str(e),
-                "services": {
-                    "celery": "unknown",
-                    "redis": "unknown",
-                    "docling": "unknown",
-                    "document_converter": "unknown",
-                }
-            }
+            detail=str(e)
         )
