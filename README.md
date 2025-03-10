@@ -5,16 +5,16 @@
 
 ## Comparison to Other Parsing Libraries
 
-| Original PDF |
-|--------------|
+| Original PDF                                                                                                         |
+| -------------------------------------------------------------------------------------------------------------------- |
 | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/original.png" width="500"/> |
 
-| Docling-API | Marker |
-|-------------|--------|
+| Docling-API                                                                                                         | Marker                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/docling.png" width="500"/> | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/marker.png" width="500"/> |
 
-| PyPDF | PyMuPDF4LLM |
-|-------|-------------|
+| PyPDF                                                                                                             | PyMuPDF4LLM                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/pypdf.png" width="500"/> | <img src="https://raw.githubusercontent.com/drmingler/docling-api/refs/heads/main/images/pymupdf.png" width="500"/> |
 
 ## Features
@@ -50,20 +50,20 @@
 ## Environment Setup (Running Locally)
 
 ### Prerequisites
-- Python 3.8 or higher
-- Poetry (Python package manager)
+- Python 3.12 or higher
+- uv (Python package manager)
 - Redis server (for task queue)
 
-### 1. Install Poetry (if not already installed)
+### 1. Install uv (if not already installed)
 ```bash
-curl -sSL https://install.python-poetry.org | python3 -
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### 2. Clone and Setup Project
 ```bash
 git clone https://github.com/drmingler/docling-api.git
 cd docling-api
-poetry install
+uv pip install -r pyproject.toml
 ```
 
 ### 3. Configure Environment
@@ -92,17 +92,17 @@ sudo service redis-server start
 
 1. Start the FastAPI server:
 ```bash
-poetry run uvicorn main:app --reload --port 8080
+uvicorn main:app --reload --port 8080
 ```
 
 2. Start Celery worker (in a new terminal):
 ```bash
-poetry run celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
 ```
 
 3. Start Flower dashboard for monitoring (optional, in a new terminal):
 ```bash
-poetry run celery -A worker.celery_config flower --port=5555
+celery -A worker.celery_config flower --port=5555
 ```
 
 ### 6. Verify Installation
@@ -144,16 +144,43 @@ REDIS_HOST=redis://redis:6379/0
 ENV=production
 ```
 
-### CPU Mode
-To start the service using CPU-only processing, use the following command. You can adjust the number of Celery workers by specifying the --scale option. In this example, 1 worker will be created:
+### Using Makefile Commands
+
+The project includes a Makefile for convenient management of Docker operations:
+
+#### CPU Mode
 ```bash
-docker-compose -f docker-compose.cpu.yml up --build --scale celery_worker=1
+# Build and run in CPU mode with 1 worker
+make docker-build-cpu
+make docker-start-cpu
+
+# Or build and run with multiple workers
+make docker-run-cpu WORKER_COUNT=3
 ```
 
-### GPU Mode (Recommend for production)
-For production, it is recommended to enable GPU acceleration, as it significantly improves performance. Use the command below to start the service with GPU support. You can also scale the number of Celery workers using the --scale option; here, 3 workers will be launched:
+#### GPU Mode (Recommended for production)
 ```bash
-docker-compose -f docker-compose.gpu.yml up --build --scale celery_worker=3
+# Build and run in GPU mode with 1 worker
+make docker-build-gpu
+make docker-start-gpu
+
+# Or build and run with multiple workers
+make docker-run-gpu WORKER_COUNT=3
+```
+
+#### Other Makefile Commands
+```bash
+# Stop all containers
+make docker-stop
+
+# Remove all containers
+make docker-down
+
+# View logs
+make docker-logs
+
+# Clean Docker resources
+make docker-clean
 ```
 
 ## Service Components
@@ -236,6 +263,7 @@ The service uses a distributed architecture with the following components:
 - GPU mode provides significantly faster processing for large documents
 - CPU mode is suitable for smaller deployments or when GPU is not available
 - Multiple workers can be scaled horizontally for increased throughput
+- Using uv package manager for faster dependency installation and better caching
 
 ## License
 The codebase is under MIT license. See LICENSE for more information
@@ -245,3 +273,4 @@ The codebase is under MIT license. See LICENSE for more information
 - [FastAPI](https://fastapi.tiangolo.com/) the web framework
 - [Celery](https://docs.celeryq.dev/en/stable/) for distributed task processing
 - [Flower](https://flower.readthedocs.io/en/latest/) for monitoring and management
+- [uv](https://github.com/astral/uv) for fast, reliable Python package management

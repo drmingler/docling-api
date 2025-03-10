@@ -1,25 +1,37 @@
-version: "3.8"
-
 services:
   celery_worker:
     build:
       context: .
       args:
         CPU_ONLY: "false"
+      x-bake:
+        platforms:
+          - linux/amd64
+        output: type=docker
+        contexts:
+          - default
+      x-pass-nvidia:
+        - capabilities=compute,utility,graphics,video
     image: converter-gpu-image
-    command: poetry run celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    command: uv run celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
     volumes:
-      - .:/app
+      - ./worker:/app/worker
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
+    healthcheck:
+      test: [ "CMD", "uv", "run", "celery", "-A", "worker.celery_config", "inspect", "ping", "-d", "celery@worker_primary" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     depends_on:
       - redis
 
@@ -29,8 +41,18 @@ services:
       context: .
       args:
         CPU_ONLY: "false"
+      cache_from:
+        - converter-gpu-image
+      x-bake:
+        platforms:
+          - linux/amd64
+        output: type=docker
+        contexts:
+          - default
+      x-pass-nvidia:
+        - capabilities=compute,utility,graphics,video
     image: converter-gpu-image
-    command: poetry run uvicorn --port 8080 --host 0.0.0.0 main:app
+    command: uv run uvicorn main:app --port 8080 --host 0.0.0.0 --workers 4 --proxy-headers
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
@@ -38,14 +60,20 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - .:/app
+      - ./main.py:/app/main.py
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     depends_on:
       - redis
       - celery_worker
@@ -55,6 +83,12 @@ services:
     image: redis:7.2.4-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   flower:
     container_name: flower_gpu
@@ -62,12 +96,22 @@ services:
       context: .
       args:
         CPU_ONLY: "false"
+      cache_from:
+        - converter-gpu-image
+      x-bake:
+        platforms:
+          - linux/amd64
+        output: type=docker
+        contexts:
+          - default
+      x-pass-nvidia:
+        - capabilities=compute,utility,graphics,video
     image: converter-gpu-image
-    command: poetry run celery -A worker.celery_config flower --port=5555
+    command: uv run celery -A worker.celery_config flower --port=5555
     ports:
       - "5556:5555"
     volumes:
-      - .:/app
+      - ./worker:/app/worker
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
@@ -81,4 +125,8 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
+
+volumes:
+  model_cache:
+    name: docling_model_cache

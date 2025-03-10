@@ -11,7 +11,7 @@ from docling.document_converter import PdfFormatOption, DocumentConverter
 from docling_core.types.doc import ImageRefMode, TableItem, PictureItem
 from fastapi import HTTPException
 
-from document_converter.schema import BatchConversionJobResult, ConversationJobResult, ConversionResult, ImageData
+from document_converter.schema import BatchConversionJobResult, ConversionJobResult, ConversionResult, ImageData
 from document_converter.utils import handle_csv_file
 
 logging.basicConfig(level=logging.INFO)
@@ -180,7 +180,7 @@ class DocumentConverterService:
         documents = [(filename, BytesIO(file)) for filename, file in documents]
         return self.document_converter.convert_batch(documents, **kwargs)
 
-    def get_single_document_task_result(self, job_id: str) -> ConversationJobResult:
+    def get_single_document_task_result(self, job_id: str) -> ConversionJobResult:
         """Get the status and result of a document conversion job.
 
         Returns:
@@ -191,18 +191,18 @@ class DocumentConverterService:
 
         task = AsyncResult(job_id)
         if task.state == 'PENDING':
-            return ConversationJobResult(job_id=job_id, status="IN_PROGRESS")
+            return ConversionJobResult(job_id=job_id, status="IN_PROGRESS")
 
         elif task.state == 'SUCCESS':
             result = task.get()
             # Check if the conversion result contains an error
             if result.get('error'):
-                return ConversationJobResult(job_id=job_id, status="FAILURE", error=result['error'])
+                return ConversionJobResult(job_id=job_id, status="FAILURE", error=result['error'])
 
-            return ConversationJobResult(job_id=job_id, status="SUCCESS", result=ConversionResult(**result))
+            return ConversionJobResult(job_id=job_id, status="SUCCESS", result=ConversionResult(**result))
 
         else:
-            return ConversationJobResult(job_id=job_id, status="FAILURE", error=str(task.result))
+            return ConversionJobResult(job_id=job_id, status="FAILURE", error=str(task.result))
 
     def get_batch_conversion_task_result(self, job_id: str) -> BatchConversionJobResult:
         """Get the status and results of a batch conversion job.
@@ -224,9 +224,9 @@ class DocumentConverterService:
 
             for result in conversion_results:
                 if result.get('error'):
-                    job_result = ConversationJobResult(status="FAILURE", error=result['error'])
+                    job_result = ConversionJobResult(status="FAILURE", error=result['error'])
                 else:
-                    job_result = ConversationJobResult(
+                    job_result = ConversionJobResult(
                         status="SUCCESS", result=ConversionResult(**result).model_dump(exclude_unset=True)
                     )
                 job_results.append(job_result)

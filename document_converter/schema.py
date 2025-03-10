@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Dict, Any
 
 
 class ImageData(BaseModel):
@@ -21,7 +21,7 @@ class BatchConversionResult(BaseModel):
     )
 
 
-class ConversationJobResult(BaseModel):
+class ConversionJobResult(BaseModel):
     job_id: Optional[str] = Field(None, description="The id of the conversion job")
     result: Optional[ConversionResult] = Field(None, description="The result of the conversion job")
     error: Optional[str] = Field(None, description="The error that occurred during the conversion job")
@@ -30,7 +30,7 @@ class ConversationJobResult(BaseModel):
 
 class BatchConversionJobResult(BaseModel):
     job_id: str = Field(..., description="The id of the conversion job")
-    conversion_results: List[ConversationJobResult] = Field(
+    conversion_results: List[ConversionJobResult] = Field(
         default_factory=list, description="The results of the conversion job"
     )
     status: Literal["IN_PROGRESS", "SUCCESS", "FAILURE"] = Field(
