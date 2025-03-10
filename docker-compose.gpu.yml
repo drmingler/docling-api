@@ -4,15 +4,23 @@ services:
       context: .
       args:
         CPU_ONLY: "false"
+      x-bake:
+        platforms:
+          - linux/amd64
+        output: type=docker
+        contexts:
+          - default
+      x-pass-nvidia:
+        - capabilities=compute,utility,graphics,video
     image: converter-gpu-image
-    command: /app/.venv/bin/python -m celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    command: uv run celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
     volumes:
       - ./worker:/app/worker
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
     healthcheck:
-      test: [ "CMD", "/app/.venv/bin/python", "-m", "celery", "-A", "worker.celery_config", "inspect", "ping", "-d", "celery@worker_primary" ]
+      test: [ "CMD", "uv", "run", "celery", "-A", "worker.celery_config", "inspect", "ping", "-d", "celery@worker_primary" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -35,8 +43,16 @@ services:
         CPU_ONLY: "false"
       cache_from:
         - converter-gpu-image
+      x-bake:
+        platforms:
+          - linux/amd64
+        output: type=docker
+        contexts:
+          - default
+      x-pass-nvidia:
+        - capabilities=compute,utility,graphics,video
     image: converter-gpu-image
-    command: /app/.venv/bin/python -m uvicorn main:app --port 8080 --host 0.0.0.0 --workers 4 --proxy-headers
+    command: uv run uvicorn main:app --port 8080 --host 0.0.0.0 --workers 4 --proxy-headers
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - ENV=production
@@ -82,8 +98,16 @@ services:
         CPU_ONLY: "false"
       cache_from:
         - converter-gpu-image
+      x-bake:
+        platforms:
+          - linux/amd64
+        output: type=docker
+        contexts:
+          - default
+      x-pass-nvidia:
+        - capabilities=compute,utility,graphics,video
     image: converter-gpu-image
-    command: /app/.venv/bin/python -m celery -A worker.celery_config flower --port=5555
+    command: uv run celery -A worker.celery_config flower --port=5555
     ports:
       - "5556:5555"
     volumes:
