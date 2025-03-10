@@ -4,7 +4,7 @@ services:
       context: .
       args:
         CPU_ONLY: "true"
-      target: runtime
+      # target: runtime
     image: converter-cpu-image
     command: /app/.venv/bin/python -m celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
     volumes:
@@ -28,7 +28,7 @@ services:
       context: .
       args:
         CPU_ONLY: "true"
-      target: runtime
+      # target: runtime
       cache_from:
         - converter-cpu-image
     image: converter-cpu-image
@@ -71,7 +71,7 @@ services:
       context: .
       args:
         CPU_ONLY: "true"
-      target: runtime
+      # target: runtime
       cache_from:
         - converter-cpu-image
     image: converter-cpu-image

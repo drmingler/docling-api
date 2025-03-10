@@ -20,6 +20,7 @@ help:
 	@echo "Docker:"
 	@echo "  docker-build-cpu   - Build Docker image (CPU version)"
 	@echo "  docker-build-gpu   - Build Docker image (GPU version)"
+	@echo "  docker-start       - Auto-detect system and start appropriate container (CPU/GPU)"
 	@echo "  docker-start-cpu   - Start services in CPU mode"
 	@echo "  docker-start-gpu   - Start services in GPU mode"
 	@echo "  docker-stop        - Stop all Docker services"
@@ -78,6 +79,17 @@ docker-start-cpu:
 
 docker-start-gpu:
 	$(DOCKER_GPU_COMPOSE) up --build --scale celery_worker=3
+
+# Auto-detect architecture and start appropriate container
+docker-start:
+	@echo "Auto-detecting system architecture..."
+	@if [ "$(shell uname -m)" = "arm64" ] || [ "$(shell uname -m)" = "aarch64" ] || ! command -v nvidia-smi >/dev/null 2>&1; then \
+		echo "ARM architecture or NVIDIA drivers not detected. Using CPU mode."; \
+		$(MAKE) docker-start-cpu; \
+	else \
+		echo "NVIDIA GPU detected. Using GPU mode."; \
+		$(MAKE) docker-start-gpu; \
+	fi
 
 docker-stop:
 	$(DOCKER_CPU_COMPOSE) down

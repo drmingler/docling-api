@@ -58,3 +58,8 @@ build/
 # Model cache and downloads
 model_cache/
 downloads/ 
+
+*.pyc
+*.pyo
+*.pyd
+.env
