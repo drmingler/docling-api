@@ -152,7 +152,7 @@ The project includes a Makefile for convenient management of Docker operations:
 ```bash
 # Build and run in CPU mode with 1 worker
 make docker-build-cpu
-make docker-run-cpu
+make docker-start-cpu
 
 # Or build and run with multiple workers
 make docker-run-cpu WORKER_COUNT=3
@@ -162,7 +162,7 @@ make docker-run-cpu WORKER_COUNT=3
 ```bash
 # Build and run in GPU mode with 1 worker
 make docker-build-gpu
-make docker-run-gpu
+make docker-start-gpu
 
 # Or build and run with multiple workers
 make docker-run-gpu WORKER_COUNT=3
