@@ -50,7 +50,7 @@
 ## Environment Setup (Running Locally)
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.12 or higher
 - Poetry (Python package manager)
 - Redis server (for task queue)
 
