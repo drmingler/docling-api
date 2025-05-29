@@ -111,7 +111,7 @@ poetry run celery -A worker.celery_config flower --port=5555
 
 1. Check if the API server is running:
 ```bash
-curl http://localhost:8080/docs
+curl http://localhost:8080/health
 ```
 
 2. Test Celery worker:
