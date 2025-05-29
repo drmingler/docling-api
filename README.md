@@ -223,6 +223,11 @@ curl -X POST "http://localhost:8080/batch-conversion-jobs" \
 - `MAX_SIZE_PER_FILE_MB`: Maximum size of each uploaded file in MB (default: `100`)
 - `MAX_BATCH_SIZE_MB`: Maximum combined size of files in a batch upload in MB (default: `500`)
 
+## Health
+
+- `GET /health` — liveness probe. Returns `200 {"status": "ok"}` when the API process is up.
+- `GET /health/ready` — readiness probe. Reports whether the Celery broker connection is reachable.
+
 The limits apply to both synchronous conversions and asynchronous conversion jobs. Uploads over either limit return `413 Payload Too Large`.
 
 ## Monitoring
