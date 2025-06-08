@@ -12,7 +12,7 @@ from docling_core.types.doc import ImageRefMode, TableItem, PictureItem
 from fastapi import HTTPException
 
 from document_converter.schema import BatchConversionJobResult, ConversationJobResult, ConversionResult, ImageData
-from document_converter.utils import handle_csv_file
+from document_converter.utils import handle_csv_file, handle_xlsx_file
 
 logging.basicConfig(level=logging.INFO)
 IMAGE_RESOLUTION_SCALE = 4
@@ -108,6 +108,13 @@ class DoclingDocumentConversion(DocumentConversionBase):
             file, error = handle_csv_file(file)
             if error:
                 return ConversionResult(filename=filename, error=error)
+
+
+        if filename.lower().endswith('.xlsx'):
+            file, error = handle_xlsx_file(file)
+            if error:
+                return ConversionResult(filename=filename, error=error)
+
 
         conv_res = doc_converter.convert(DocumentStream(name=filename, stream=file), raises_on_error=False)
         doc_filename = conv_res.input.file.stem

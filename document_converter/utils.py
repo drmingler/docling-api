@@ -5,6 +5,8 @@ from typing import Dict, List, Optional, Tuple
 
 import filetype
 
+import openpyxl
+
 
 class InputFormat(str, Enum):
     DOCX = "docx"
@@ -15,6 +17,7 @@ class InputFormat(str, Enum):
     ASCIIDOC = "asciidoc"
     MD = "md"
     CSV = "csv"
+    XLSX = "xlsx"
 
 
 class OutputFormat(str, Enum):
@@ -33,6 +36,7 @@ FormatToExtensions: Dict[InputFormat, List[str]] = {
     InputFormat.IMAGE: ["jpg", "jpeg", "png", "tif", "tiff", "bmp"],
     InputFormat.ASCIIDOC: ["adoc", "asciidoc", "asc"],
     InputFormat.CSV: ["csv"],
+    InputFormat.XLSX: ["xlsx"], # "xltx", "xlsm", "xltm", "xlam", "xlsb"
 }
 
 FormatToMimeType: Dict[InputFormat, List[str]] = {
@@ -57,6 +61,7 @@ FormatToMimeType: Dict[InputFormat, List[str]] = {
     InputFormat.ASCIIDOC: ["text/asciidoc"],
     InputFormat.MD: ["text/markdown", "text/x-markdown"],
     InputFormat.CSV: ["text/csv"],
+    InputFormat.XLSX: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
 }
 MimeTypeToFormat = {mime: fmt for fmt, mimes in FormatToMimeType.items() for mime in mimes}
 
@@ -93,7 +98,7 @@ def guess_format(obj: bytes, filename: str = None):
             return InputFormat.CSV
 
         mime = filetype.guess_mime(content)
-        if mime is None:
+        if mime is None: # mime type is not found
             ext = filename.rsplit(".", 1)[-1] if ("." in filename and not filename.startswith(".")) else ""
             mime = mime_from_extension(ext)
 
@@ -117,6 +122,26 @@ def handle_csv_file(file: BytesIO) -> Tuple[BytesIO, Optional[str]]:
         except UnicodeDecodeError:
             continue
     return file, f"Could not decode CSV file. Supported encodings: {', '.join(SUPPORTED_CSV_ENCODINGS)}"
+
+def handle_xlsx_file(file: BytesIO) -> Tuple[BytesIO, Optional[str]]:
+    """Handle XLSX file. reads the cell value, not the formula.
+
+    Returns:
+        Tuple[BytesIO, Optional[str]]: (processed file, error message if any)
+    """
+    err_msg = None
+
+    newFile = BytesIO() # var to place converted .xlsx
+    try:
+        wb = openpyxl.load_workbook(filename=file, data_only=True) # create .xlsx from bytesio, converting formulas into values
+        wb.save(newFile)
+    except Exception as err:
+        err_msg = str(err)
+
+    newFile.seek(0)
+
+    return newFile, err_msg
+
 
 
 def mime_from_extension(ext):
