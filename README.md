@@ -222,6 +222,8 @@ curl -X POST "http://localhost:8080/batch-conversion-jobs" \
 - `CPU_ONLY`: Build argument to switch between CPU/GPU modes
 - `MAX_SIZE_PER_FILE_MB`: Maximum size of each uploaded file in MB (default: `100`)
 - `MAX_BATCH_SIZE_MB`: Maximum combined size of files in a batch upload in MB (default: `500`)
+- `CORS_ALLOW_ORIGINS`: Comma-separated list of allowed origins (default: `*`). Credentials are only sent when explicit origins are configured.
+- `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND`: Optional explicit Celery URLs. If unset, both fall back to `REDIS_HOST`.
 
 ## Health
 
