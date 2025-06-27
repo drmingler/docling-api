@@ -5,7 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from document_converter.route import router as document_converter_router
 
-app = FastAPI()
+app = FastAPI(
+    title="Document to Markdown API",
+    description="Convert PDF, DOCX, PPTX, HTML, images, AsciiDoc, Markdown, and CSV to Markdown.",
+    version="0.1.0",
+)
 
 
 # Browsers reject `Access-Control-Allow-Origin: *` when credentials are included,
