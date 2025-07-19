@@ -27,4 +27,9 @@ app.add_middleware(
 )
 
 
+@app.get("/health", tags=["health"], summary="Liveness probe")
+def health():
+    return {"status": "ok"}
+
+
 app.include_router(document_converter_router, prefix="", tags=["document-converter"])
