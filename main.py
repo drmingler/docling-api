@@ -32,4 +32,16 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/health/ready", tags=["health"], summary="Readiness probe")
+def health_ready():
+    from worker.celery_config import celery_app
+
+    try:
+        with celery_app.connection_for_read() as conn:
+            conn.ensure_connection(max_retries=1, timeout=2)
+        return {"status": "ok", "broker": "ok"}
+    except Exception as exc:  # pragma: no cover - depends on runtime infra
+        return {"status": "degraded", "broker": f"unreachable: {exc}"}
+
+
 app.include_router(document_converter_router, prefix="", tags=["document-converter"])
