@@ -1,9 +1,12 @@
+import logging
 import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from document_converter.route import router as document_converter_router
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title="Document to Markdown API",
