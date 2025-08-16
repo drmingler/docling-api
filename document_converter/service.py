@@ -17,6 +17,8 @@ from document_converter.utils import handle_csv_file
 logger = logging.getLogger(__name__)
 
 IMAGE_RESOLUTION_SCALE = 4
+MIN_IMAGE_RESOLUTION_SCALE = 1
+MAX_IMAGE_RESOLUTION_SCALE = 4
 
 
 class DocumentConversionBase(ABC):
