@@ -14,6 +14,8 @@ from fastapi import HTTPException
 from document_converter.schema import BatchConversionJobResult, ConversationJobResult, ConversionResult, ImageData
 from document_converter.utils import handle_csv_file
 
+logger = logging.getLogger(__name__)
+
 IMAGE_RESOLUTION_SCALE = 4
 
 
