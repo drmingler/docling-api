@@ -151,7 +151,7 @@ class DoclingDocumentConversion(DocumentConversionBase):
         doc_filename = conv_res.input.file.stem
 
         if conv_res.errors:
-            logging.error(f"Failed to convert {filename}: {conv_res.errors[0].error_message}")
+            logger.error("Failed to convert %s: %s", filename, conv_res.errors[0].error_message)
             return ConversionResult(filename=doc_filename, error=conv_res.errors[0].error_message)
 
         content_md, images = self._process_document_images(conv_res)
@@ -178,7 +178,7 @@ class DoclingDocumentConversion(DocumentConversionBase):
             doc_filename = conv_res.input.file.stem
 
             if conv_res.errors:
-                logging.error(f"Failed to convert {conv_res.input.name}: {conv_res.errors[0].error_message}")
+                logger.error("Failed to convert %s: %s", conv_res.input.name, conv_res.errors[0].error_message)
                 results.append(ConversionResult(filename=conv_res.input.name, error=conv_res.errors[0].error_message))
                 continue
 
