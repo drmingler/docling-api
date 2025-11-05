@@ -15,12 +15,6 @@ class ConversionResult(BaseModel):
     error: Optional[str] = Field(None, description="The error that occurred during the conversion")
 
 
-class BatchConversionResult(BaseModel):
-    conversion_results: List[ConversionResult] = Field(
-        default_factory=list, description="The results of the conversions"
-    )
-
-
 class ConversationJobResult(BaseModel):
     job_id: Optional[str] = Field(None, description="The id of the conversion job")
     result: Optional[ConversionResult] = Field(None, description="The result of the conversion job")
