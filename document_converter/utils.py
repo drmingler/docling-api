@@ -61,7 +61,7 @@ FormatToMimeType: Dict[InputFormat, List[str]] = {
 MimeTypeToFormat = {mime: fmt for fmt, mimes in FormatToMimeType.items() for mime in mimes}
 
 
-def detect_html_xhtml(content):
+def detect_html_xhtml(content: bytes) -> Optional[str]:
     content_str = content.decode("ascii", errors="ignore").lower()
     # Remove XML comments
     content_str = re.sub(r"<!--(.*?)-->", "", content_str, flags=re.DOTALL)
@@ -82,7 +82,7 @@ def is_csv_file(filename: str) -> bool:
     return filename and filename.lower().endswith('.csv')
 
 
-def guess_format(obj: bytes, filename: str = None):
+def guess_format(obj: bytes, filename: Optional[str] = None) -> Optional[InputFormat]:
     content = b""
     mime = None
 
@@ -119,7 +119,7 @@ def handle_csv_file(file: BytesIO) -> Tuple[BytesIO, Optional[str]]:
     return file, f"Could not decode CSV file. Supported encodings: {', '.join(SUPPORTED_CSV_ENCODINGS)}"
 
 
-def mime_from_extension(ext):
+def mime_from_extension(ext: str) -> Optional[str]:
     mime = None
     if ext in FormatToExtensions[InputFormat.ASCIIDOC]:
         mime = FormatToMimeType[InputFormat.ASCIIDOC][0]
