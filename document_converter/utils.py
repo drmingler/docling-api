@@ -77,9 +77,9 @@ def detect_html_xhtml(content: bytes) -> Optional[str]:
     return None
 
 
-def is_csv_file(filename: str) -> bool:
+def is_csv_file(filename: Optional[str]) -> bool:
     """Check if a file is a CSV based on its extension."""
-    return filename and filename.lower().endswith('.csv')
+    return bool(filename) and filename.lower().endswith('.csv')
 
 
 def guess_format(obj: bytes, filename: Optional[str] = None) -> Optional[InputFormat]:
