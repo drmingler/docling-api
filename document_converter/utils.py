@@ -84,7 +84,7 @@ def is_csv_file(filename: Optional[str]) -> bool:
 
 def guess_format(obj: bytes, filename: Optional[str] = None) -> Optional[InputFormat]:
     content = b""
-    mime = None
+    mime: Optional[str] = None
 
     if isinstance(obj, bytes):
         content = obj
@@ -94,7 +94,7 @@ def guess_format(obj: bytes, filename: Optional[str] = None) -> Optional[InputFo
 
         mime = filetype.guess_mime(content)
         if mime is None:
-            ext = filename.rsplit(".", 1)[-1] if ("." in filename and not filename.startswith(".")) else ""
+            ext = filename.rsplit(".", 1)[-1] if (filename and "." in filename and not filename.startswith(".")) else ""
             mime = mime_from_extension(ext)
 
     mime = mime or detect_html_xhtml(content)
