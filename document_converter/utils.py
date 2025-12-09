@@ -58,7 +58,7 @@ FormatToMimeType: Dict[InputFormat, List[str]] = {
     InputFormat.MD: ["text/markdown", "text/x-markdown"],
     InputFormat.CSV: ["text/csv"],
 }
-MimeTypeToFormat = {mime: fmt for fmt, mimes in FormatToMimeType.items() for mime in mimes}
+MimeTypeToFormat: Dict[str, InputFormat] = {mime: fmt for fmt, mimes in FormatToMimeType.items() for mime in mimes}
 
 
 def detect_html_xhtml(content: bytes) -> Optional[str]:
