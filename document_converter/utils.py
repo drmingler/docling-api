@@ -60,6 +60,8 @@ FormatToMimeType: Dict[InputFormat, List[str]] = {
 }
 MimeTypeToFormat: Dict[str, InputFormat] = {mime: fmt for fmt, mimes in FormatToMimeType.items() for mime in mimes}
 
+SUPPORTED_CSV_ENCODINGS: Tuple[str, ...] = ("utf-8", "cp1252", "latin1", "iso-8859-1")
+
 
 def detect_html_xhtml(content: bytes) -> Optional[str]:
     content_str = content.decode("ascii", errors="ignore").lower()
@@ -108,7 +110,6 @@ def handle_csv_file(file: BytesIO) -> Tuple[BytesIO, Optional[str]]:
     Returns:
         Tuple[BytesIO, Optional[str]]: (processed file, error message if any)
     """
-    SUPPORTED_CSV_ENCODINGS = ['utf-8', 'cp1252', 'latin1', 'iso-8859-1']
     for encoding in SUPPORTED_CSV_ENCODINGS:
         try:
             file.seek(0)
