@@ -121,17 +121,15 @@ def handle_csv_file(file: BytesIO) -> Tuple[BytesIO, Optional[str]]:
 
 
 def mime_from_extension(ext: str) -> Optional[str]:
-    mime = None
     if ext in FormatToExtensions[InputFormat.ASCIIDOC]:
-        mime = FormatToMimeType[InputFormat.ASCIIDOC][0]
-    elif ext in FormatToExtensions[InputFormat.HTML]:
-        mime = FormatToMimeType[InputFormat.HTML][0]
-    elif ext in FormatToExtensions[InputFormat.MD]:
-        mime = FormatToMimeType[InputFormat.MD][0]
-    elif ext in FormatToExtensions[InputFormat.CSV]:
-        mime = FormatToMimeType[InputFormat.CSV][0]
-
-    return mime
+        return FormatToMimeType[InputFormat.ASCIIDOC][0]
+    if ext in FormatToExtensions[InputFormat.HTML]:
+        return FormatToMimeType[InputFormat.HTML][0]
+    if ext in FormatToExtensions[InputFormat.MD]:
+        return FormatToMimeType[InputFormat.MD][0]
+    if ext in FormatToExtensions[InputFormat.CSV]:
+        return FormatToMimeType[InputFormat.CSV][0]
+    return None
 
 
 def is_file_format_supported(file_bytes: bytes, filename: str) -> bool:
