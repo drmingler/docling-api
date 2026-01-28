@@ -81,7 +81,7 @@ def detect_html_xhtml(content: bytes) -> Optional[str]:
 
 def is_csv_file(filename: Optional[str]) -> bool:
     """Check if a file is a CSV based on its extension."""
-    return bool(filename) and filename.lower().endswith('.csv')
+    return bool(filename) and filename.lower().endswith(".csv")
 
 
 def guess_format(obj: bytes, filename: Optional[str] = None) -> Optional[InputFormat]:
@@ -114,7 +114,7 @@ def handle_csv_file(file: BytesIO) -> Tuple[BytesIO, Optional[str]]:
         try:
             file.seek(0)
             content = file.read().decode(encoding)
-            return BytesIO(content.encode('utf-8')), None
+            return BytesIO(content.encode("utf-8")), None
         except UnicodeDecodeError:
             continue
     return file, f"Could not decode CSV file. Supported encodings: {', '.join(SUPPORTED_CSV_ENCODINGS)}"
