@@ -51,10 +51,11 @@ class DoclingDocumentConversion(DocumentConversionBase):
     def __init__(self, pipeline_options: PdfPipelineOptions = None):
         self.pipeline_options = pipeline_options if pipeline_options else self._setup_default_pipeline_options()
 
-    def _update_pipeline_options(self, extract_tables: bool, image_resolution_scale: int) -> PdfPipelineOptions:
-        self.pipeline_options.images_scale = image_resolution_scale
-        self.pipeline_options.generate_table_images = extract_tables
-        return self.pipeline_options
+    def _build_pipeline_options(self, extract_tables: bool, image_resolution_scale: int) -> PdfPipelineOptions:
+        options = self.pipeline_options.model_copy(deep=True)
+        options.images_scale = image_resolution_scale
+        options.generate_table_images = extract_tables
+        return options
 
     @staticmethod
     def _setup_default_pipeline_options() -> PdfPipelineOptions:
@@ -133,7 +134,7 @@ class DoclingDocumentConversion(DocumentConversionBase):
         image_resolution_scale: int = IMAGE_RESOLUTION_SCALE,
     ) -> ConversionResult:
         filename, file = document
-        pipeline_options = self._update_pipeline_options(extract_tables, image_resolution_scale)
+        pipeline_options = self._build_pipeline_options(extract_tables, image_resolution_scale)
         doc_converter = DocumentConverter(
             format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
         )
@@ -159,7 +160,7 @@ class DoclingDocumentConversion(DocumentConversionBase):
         extract_tables: bool = False,
         image_resolution_scale: int = IMAGE_RESOLUTION_SCALE,
     ) -> List[ConversionResult]:
-        pipeline_options = self._update_pipeline_options(extract_tables, image_resolution_scale)
+        pipeline_options = self._build_pipeline_options(extract_tables, image_resolution_scale)
         doc_converter = DocumentConverter(
             format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
         )
