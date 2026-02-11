@@ -34,6 +34,10 @@ def _batch_too_large_error() -> HTTPException:
     )
 
 
+def _unsupported_format_error(filename: str) -> HTTPException:
+    return HTTPException(status_code=400, detail=f"Unsupported file format: {filename}")
+
+
 async def _read_document_with_limit(
     document: UploadFile,
     remaining_batch_bytes: Optional[int] = None,
@@ -64,7 +68,7 @@ async def read_and_validate_document(document: UploadFile) -> Tuple[str, bytes]:
     filename = document.filename or "unnamed"
 
     if not is_file_format_supported(file_bytes, filename):
-        raise HTTPException(status_code=400, detail=f"Unsupported file format: {filename}")
+        raise _unsupported_format_error(filename)
 
     return filename, file_bytes
 
@@ -88,6 +92,6 @@ async def read_and_validate_batch(documents: List[UploadFile]) -> List[Tuple[str
 
     for filename, file_bytes in document_data:
         if not is_file_format_supported(file_bytes, filename):
-            raise HTTPException(status_code=400, detail=f"Unsupported file format: {filename}")
+            raise _unsupported_format_error(filename)
 
     return document_data
