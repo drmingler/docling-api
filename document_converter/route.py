@@ -10,17 +10,18 @@ from worker.tasks import convert_document_task, convert_documents_task
 
 router = APIRouter()
 
-# Could be docling or another converter as long as it implements DocumentConversionBase
+# Could be docling or another converter as long as it implements DocumentConversionBase.
+# Options are copied per-request inside DoclingDocumentConversion, so this is safe to share.
 converter = DoclingDocumentConversion()
 document_converter_service = DocumentConverterService(document_converter=converter)
 
 
 # Document direct conversion endpoints
 @router.post(
-    '/documents/convert',
+    "/documents/convert",
     response_model=ConversionResult,
     response_model_exclude_unset=True,
-    description="Convert a single document synchronously",
+    description="Convert a single document synchronously.",
 )
 async def convert_single_document(
     document: UploadFile = File(...),
@@ -37,10 +38,10 @@ async def convert_single_document(
 
 
 @router.post(
-    '/documents/batch-convert',
+    "/documents/batch-convert",
     response_model=List[ConversionResult],
     response_model_exclude_unset=True,
-    description="Convert multiple documents synchronously",
+    description="Convert multiple documents synchronously.",
 )
 async def convert_multiple_documents(
     documents: List[UploadFile] = File(...),
@@ -59,9 +60,9 @@ async def convert_multiple_documents(
 
 # Asynchronous conversion jobs endpoints
 @router.post(
-    '/conversion-jobs',
+    "/conversion-jobs",
     response_model=ConversationJobResult,
-    description="Create a conversion job for a single document",
+    description="Create a conversion job for a single document.",
 )
 async def create_single_document_conversion_job(
     document: UploadFile = File(...),
@@ -80,9 +81,9 @@ async def create_single_document_conversion_job(
 
 
 @router.get(
-    '/conversion-jobs/{job_id}',
+    "/conversion-jobs/{job_id}",
     response_model=ConversationJobResult,
-    description="Get the status of a single document conversion job",
+    description="Get the status of a single document conversion job.",
     response_model_exclude_unset=True,
 )
 async def get_conversion_job_status(job_id: str):
@@ -90,10 +91,10 @@ async def get_conversion_job_status(job_id: str):
 
 
 @router.post(
-    '/batch-conversion-jobs',
+    "/batch-conversion-jobs",
     response_model=BatchConversionJobResult,
     response_model_exclude_unset=True,
-    description="Create a conversion job for multiple documents",
+    description="Create a conversion job for multiple documents.",
 )
 async def create_batch_conversion_job(
     documents: List[UploadFile] = File(...),
@@ -113,10 +114,10 @@ async def create_batch_conversion_job(
 
 
 @router.get(
-    '/batch-conversion-jobs/{job_id}',
+    "/batch-conversion-jobs/{job_id}",
     response_model=BatchConversionJobResult,
     response_model_exclude_unset=True,
-    description="Get the status of a batch conversion job",
+    description="Get the status of a batch conversion job.",
 )
 async def get_batch_conversion_job_status(job_id: str):
     """Get the status and results of a batch conversion job."""
