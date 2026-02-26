@@ -10,6 +10,7 @@ load_dotenv()
 
 
 def _read_upload_limit(name: str, default: int) -> int:
+    """Read a non-negative integer upload limit from the environment."""
     limit = int(os.getenv(name, str(default)))
     if limit < 0:
         raise ValueError(f"{name} must be zero or greater")
@@ -83,7 +84,7 @@ async def read_and_validate_batch(documents: List[UploadFile]) -> List[Tuple[str
     if all(size is not None for size in known_sizes) and sum(size or 0 for size in known_sizes) > remaining_batch_bytes:
         raise _batch_too_large_error()
 
-    document_data = []
+    document_data: List[Tuple[str, bytes]] = []
     for document in documents:
         file_bytes = await _read_document_with_limit(document, remaining_batch_bytes)
         filename = document.filename or "unnamed"
