@@ -4,7 +4,12 @@ from typing import List
 from fastapi import APIRouter, File, Query, UploadFile
 
 from document_converter.schema import BatchConversionJobResult, ConversationJobResult, ConversionResult
-from document_converter.service import DocumentConverterService, DoclingDocumentConversion
+from document_converter.service import (
+    MAX_IMAGE_RESOLUTION_SCALE,
+    MIN_IMAGE_RESOLUTION_SCALE,
+    DocumentConverterService,
+    DoclingDocumentConversion,
+)
 from document_converter.upload_validation import read_and_validate_batch, read_and_validate_document
 from worker.tasks import convert_document_task, convert_documents_task
 
@@ -26,7 +31,11 @@ document_converter_service = DocumentConverterService(document_converter=convert
 async def convert_single_document(
     document: UploadFile = File(...),
     extract_tables_as_images: bool = False,
-    image_resolution_scale: int = Query(4, ge=1, le=4),
+    image_resolution_scale: int = Query(
+        MAX_IMAGE_RESOLUTION_SCALE,
+        ge=MIN_IMAGE_RESOLUTION_SCALE,
+        le=MAX_IMAGE_RESOLUTION_SCALE,
+    ),
 ):
     filename, file_bytes = await read_and_validate_document(document)
 
@@ -46,7 +55,11 @@ async def convert_single_document(
 async def convert_multiple_documents(
     documents: List[UploadFile] = File(...),
     extract_tables_as_images: bool = False,
-    image_resolution_scale: int = Query(4, ge=1, le=4),
+    image_resolution_scale: int = Query(
+        MAX_IMAGE_RESOLUTION_SCALE,
+        ge=MIN_IMAGE_RESOLUTION_SCALE,
+        le=MAX_IMAGE_RESOLUTION_SCALE,
+    ),
 ):
     document_data = await read_and_validate_batch(documents)
     doc_streams = [(filename, BytesIO(file_bytes)) for filename, file_bytes in document_data]
@@ -67,7 +80,11 @@ async def convert_multiple_documents(
 async def create_single_document_conversion_job(
     document: UploadFile = File(...),
     extract_tables_as_images: bool = False,
-    image_resolution_scale: int = Query(4, ge=1, le=4),
+    image_resolution_scale: int = Query(
+        MAX_IMAGE_RESOLUTION_SCALE,
+        ge=MIN_IMAGE_RESOLUTION_SCALE,
+        le=MAX_IMAGE_RESOLUTION_SCALE,
+    ),
 ):
     filename, file_bytes = await read_and_validate_document(document)
 
@@ -99,7 +116,11 @@ async def get_conversion_job_status(job_id: str):
 async def create_batch_conversion_job(
     documents: List[UploadFile] = File(...),
     extract_tables_as_images: bool = False,
-    image_resolution_scale: int = Query(4, ge=1, le=4),
+    image_resolution_scale: int = Query(
+        MAX_IMAGE_RESOLUTION_SCALE,
+        ge=MIN_IMAGE_RESOLUTION_SCALE,
+        le=MAX_IMAGE_RESOLUTION_SCALE,
+    ),
 ):
     """Create a batch conversion job for multiple documents."""
     doc_data = await read_and_validate_batch(documents)
