@@ -122,7 +122,6 @@ async def create_batch_conversion_job(
         le=MAX_IMAGE_RESOLUTION_SCALE,
     ),
 ):
-    """Create a batch conversion job for multiple documents."""
     doc_data = await read_and_validate_batch(documents)
 
     task = convert_documents_task.delay(
@@ -141,5 +140,4 @@ async def create_batch_conversion_job(
     description="Get the status of a batch conversion job.",
 )
 async def get_batch_conversion_job_status(job_id: str):
-    """Get the status and results of a batch conversion job."""
     return document_converter_service.get_batch_conversion_task_result(job_id)
