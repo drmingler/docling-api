@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
+
+from pydantic import BaseModel, Field
 
 
 class ImageData(BaseModel):

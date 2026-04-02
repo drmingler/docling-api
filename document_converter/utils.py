@@ -1,6 +1,6 @@
-from io import BytesIO
 import re
 from enum import Enum
+from io import BytesIO
 from typing import Dict, List, Optional, Tuple
 
 import filetype
@@ -133,7 +133,7 @@ def mime_from_extension(ext: str) -> Optional[str]:
 
 
 def is_file_format_supported(file_bytes: bytes, filename: str) -> bool:
-    return guess_format(file_bytes, filename) in FormatToExtensions.keys()
+    return guess_format(file_bytes, filename) in FormatToExtensions
 
 
 def mb_to_bytes(mb: int) -> int:

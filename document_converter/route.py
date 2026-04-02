@@ -3,7 +3,11 @@ from typing import List
 
 from fastapi import APIRouter, File, Query, UploadFile
 
-from document_converter.schema import BatchConversionJobResult, ConversationJobResult, ConversionResult
+from document_converter.schema import (
+    BatchConversionJobResult,
+    ConversationJobResult,
+    ConversionResult,
+)
 from document_converter.service import (
     MAX_IMAGE_RESOLUTION_SCALE,
     MIN_IMAGE_RESOLUTION_SCALE,
@@ -19,6 +23,15 @@ router = APIRouter()
 # Options are copied per-request inside DoclingDocumentConversion, so this is safe to share.
 converter = DoclingDocumentConversion()
 document_converter_service = DocumentConverterService(document_converter=converter)
+
+
+def _image_resolution_scale_query() -> int:
+    return Query(
+        MAX_IMAGE_RESOLUTION_SCALE,
+        ge=MIN_IMAGE_RESOLUTION_SCALE,
+        le=MAX_IMAGE_RESOLUTION_SCALE,
+        description="Resolution scale applied to extracted images.",
+    )
 
 
 # Document direct conversion endpoints
