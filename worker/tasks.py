@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name="celery.ping")
-def ping():
-    print("Ping task received!")  # or use a logger
+def ping() -> str:
+    logger.info("Ping task received")
     return "pong"
 
 
