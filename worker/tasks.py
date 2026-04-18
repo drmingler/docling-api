@@ -17,9 +17,8 @@ def ping() -> str:
     return "pong"
 
 
-@celery_app.task(bind=True, name="convert_document")
+@celery_app.task(name="convert_document")
 def convert_document_task(
-    self,
     document: Tuple[str, bytes],
     extract_tables: bool = False,
     image_resolution_scale: int = IMAGE_RESOLUTION_SCALE,
@@ -31,9 +30,8 @@ def convert_document_task(
     return result.model_dump(exclude_unset=True)
 
 
-@celery_app.task(bind=True, name="convert_documents")
+@celery_app.task(name="convert_documents")
 def convert_documents_task(
-    self,
     documents: List[Tuple[str, bytes]],
     extract_tables: bool = False,
     image_resolution_scale: int = IMAGE_RESOLUTION_SCALE,
