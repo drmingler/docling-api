@@ -1,6 +1,14 @@
+import logging
 from typing import Any, Dict, List, Tuple
-from document_converter.service import IMAGE_RESOLUTION_SCALE, DoclingDocumentConversion, DocumentConverterService
+
+from document_converter.service import (
+    IMAGE_RESOLUTION_SCALE,
+    DoclingDocumentConversion,
+    DocumentConverterService,
+)
 from worker.celery_config import celery_app
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name="celery.ping")
