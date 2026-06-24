@@ -31,16 +31,13 @@ COPY pyproject.toml poetry.lock ./
 # Install locked application dependencies into the runtime virtual environment.
 RUN poetry install --only main --no-interaction --no-root
 
-# Install PyTorch separately based on the target runtime.
-RUN if [ "$CPU_ONLY" = "true" ]; then \
-    "${VIRTUAL_ENV}/bin/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cpu; \
-    else \
-    "${VIRTUAL_ENV}/bin/pip" install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
-    fi
-
-RUN if [ "$CPU_ONLY" = "true" ]; then \
-    packages="$("${VIRTUAL_ENV}/bin/python" -c 'import importlib.metadata as m; print(" ".join(d.metadata["Name"] for d in m.distributions() if d.metadata["Name"].startswith("nvidia-") or d.metadata["Name"] == "triton"))')"; \
+# Replace the PyTorch wheel from the lock file with the target CPU/GPU variant.
+RUN packages="$("${VIRTUAL_ENV}/bin/python" -c 'import importlib.metadata as m; names = {"torch", "torchvision", "torchaudio", "triton"}; print(" ".join(d.metadata["Name"] for d in m.distributions() if d.metadata["Name"] in names or d.metadata["Name"].startswith("nvidia-")))')"; \
     if [ -n "$packages" ]; then "${VIRTUAL_ENV}/bin/pip" uninstall --yes $packages; fi; \
+    if [ "$CPU_ONLY" = "true" ]; then \
+    "${VIRTUAL_ENV}/bin/pip" install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu; \
+    else \
+    "${VIRTUAL_ENV}/bin/pip" install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
     fi
 
 RUN mkdir -p /models/huggingface /models/torch
