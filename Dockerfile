@@ -10,6 +10,8 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_ROOT_USER_ACTION=ignore \
+    VIRTUAL_ENV="${VIRTUAL_ENV}" \
+    POETRY_VIRTUALENVS_CREATE=false \
     HF_HOME=/models/huggingface \
     TORCH_HOME=/models/torch \
     OMP_NUM_THREADS=4 \
@@ -18,18 +20,16 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential curl git libgl1 libglib2.0-0 wget \
+    && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install "poetry==${POETRY_VERSION}" \
-    && python -m venv "${VIRTUAL_ENV}"
+RUN python -m venv "${VIRTUAL_ENV}" \
+    && /usr/local/bin/pip install "poetry==${POETRY_VERSION}"
 
 COPY pyproject.toml poetry.lock ./
 
 # Install locked application dependencies into the runtime virtual environment.
-RUN poetry export --only main --without-hashes --format requirements.txt --output /tmp/requirements.txt \
-    && "${VIRTUAL_ENV}/bin/pip" install --requirement /tmp/requirements.txt \
-    && rm -f /tmp/requirements.txt
+RUN poetry install --only main --no-interaction --no-root
 
 # Install PyTorch separately based on the target runtime.
 RUN if [ "$CPU_ONLY" = "true" ]; then \
