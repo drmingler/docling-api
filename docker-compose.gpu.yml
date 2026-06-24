@@ -1,18 +1,21 @@
-version: "3.8"
-
 services:
   celery_worker:
     build:
       context: .
       args:
         CPU_ONLY: "false"
-    image: converter-gpu-image
-    command: poetry run celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    image: docling-api:gpu
+    command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    user: "10001:10001"
+    security_opt:
+      - no-new-privileges:true
     volumes:
-      - .:/app
+      - model_cache:/models
     environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - ENV=production
+      REDIS_HOST: redis://redis:6379/0
+      ENV: production
+      NVIDIA_VISIBLE_DEVICES: all
+    restart: on-failure
     deploy:
       resources:
         reservations:
@@ -24,21 +27,37 @@ services:
       - redis
 
   app:
-    container_name: marker-api-gpu
+    container_name: docling-api-gpu
     build:
       context: .
       args:
         CPU_ONLY: "false"
-    image: converter-gpu-image
-    command: poetry run uvicorn --port 8080 --host 0.0.0.0 main:app
+    image: docling-api:gpu
+    command: uvicorn --port 8080 --host 0.0.0.0 main:app
+    user: "10001:10001"
+    security_opt:
+      - no-new-privileges:true
     environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - ENV=production
-      - NVIDIA_VISIBLE_DEVICES=all
+      REDIS_HOST: redis://redis:6379/0
+      ENV: production
+      NVIDIA_VISIBLE_DEVICES: all
     ports:
       - "8080:8080"
     volumes:
-      - .:/app
+      - model_cache:/models
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/docs', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: on-failure
     deploy:
       resources:
         reservations:
@@ -51,28 +70,33 @@ services:
       - celery_worker
 
   redis:
-    container_name: redis
+    container_name: docling-api-redis
     image: redis:7.2.4-alpine
     ports:
       - "6379:6379"
+    restart: on-failure
 
   flower:
-    container_name: flower_gpu
+    container_name: docling-api-flower-gpu
     build:
       context: .
       args:
         CPU_ONLY: "false"
-    image: converter-gpu-image
-    command: poetry run celery -A worker.celery_config flower --port=5555
+    image: docling-api:gpu
+    command: celery -A worker.celery_config flower --port=5555
+    user: "10001:10001"
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "5556:5555"
     volumes:
-      - .:/app
+      - model_cache:/models
     environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - ENV=production
+      REDIS_HOST: redis://redis:6379/0
+      ENV: production
+      NVIDIA_VISIBLE_DEVICES: all
+    restart: on-failure
     depends_on:
-      - app
       - redis
       - celery_worker
     deploy:
@@ -82,3 +106,6 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+
+volumes:
+  model_cache:
