@@ -96,18 +96,10 @@ services:
     environment:
       REDIS_HOST: redis://redis:6379/0
       ENV: production
-      NVIDIA_VISIBLE_DEVICES: all
     restart: on-failure
     depends_on:
       - redis
       - celery_worker
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
 volumes:
   model_cache:
