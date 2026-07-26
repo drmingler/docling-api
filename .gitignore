@@ -38,3 +38,6 @@ env/
 dump.rdb
 *.log
 output.md
+
+# Local-only working docs
+CONTRIBUTOR_ISSUES.md
