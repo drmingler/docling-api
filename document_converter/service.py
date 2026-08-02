@@ -1,5 +1,6 @@
 import base64
 import logging
+import os
 from abc import ABC, abstractmethod
 from io import BytesIO
 from typing import List, Tuple
@@ -61,7 +62,10 @@ class DoclingDocumentConversion(DocumentConversionBase):
         pipeline_options = PdfPipelineOptions()
         pipeline_options.generate_page_images = False
         pipeline_options.generate_picture_images = True
-        pipeline_options.ocr_options = EasyOcrOptions(lang=["fr", "de", "es", "en", "it", "pt"])
+        pipeline_options.ocr_options = EasyOcrOptions(
+            lang=["fr", "de", "es", "en", "it", "pt"],
+            model_storage_directory=os.environ.get("EASYOCR_MODEL_DIR") or None,
+        )
 
         return pipeline_options
 

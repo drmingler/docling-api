@@ -14,6 +14,7 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_CREATE=false \
     HF_HOME=/models/huggingface \
     TORCH_HOME=/models/torch \
+    EASYOCR_MODEL_DIR=/models/easyocr \
     OMP_NUM_THREADS=4 \
     PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
@@ -40,14 +41,14 @@ RUN packages="$("${VIRTUAL_ENV}/bin/python" -c 'import importlib.metadata as m; 
     "${VIRTUAL_ENV}/bin/pip" install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121; \
     fi
 
-RUN mkdir -p /models/huggingface /models/torch
+RUN mkdir -p /models/huggingface /models/torch /models/easyocr
 
 RUN if [ "$PRELOAD_MODELS" = "true" ]; then \
     python -c 'from docling.pipeline.standard_pdf_pipeline import StandardPdfPipeline; StandardPdfPipeline.download_models_hf(force=True);'; \
     fi
 
 RUN if [ "$PRELOAD_MODELS" = "true" ]; then \
-    CPU_ONLY="$CPU_ONLY" python -c 'import os, easyocr; gpu = os.environ.get("CPU_ONLY", "true").lower() != "true"; easyocr.Reader(["fr", "de", "es", "en", "it", "pt"], gpu=gpu); print("EasyOCR models downloaded successfully")'; \
+    CPU_ONLY="$CPU_ONLY" python -c 'import os, easyocr; gpu = os.environ.get("CPU_ONLY", "true").lower() != "true"; easyocr.Reader(["fr", "de", "es", "en", "it", "pt"], gpu=gpu, model_storage_directory="/models/easyocr", download_enabled=True); print("EasyOCR models downloaded successfully")'; \
     fi
 
 FROM python:3.12-slim-bookworm AS runtime
@@ -60,6 +61,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     HF_HOME=/models/huggingface \
     TORCH_HOME=/models/torch \
+    EASYOCR_MODEL_DIR=/models/easyocr \
     OMP_NUM_THREADS=4 \
     PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
