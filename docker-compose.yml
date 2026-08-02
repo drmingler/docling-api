@@ -1,28 +1,6 @@
 services:
-  celery_worker:
-    build:
-      context: .
-      args:
-        CPU_ONLY: "true"
-    image: docling-api:cpu
-    command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
-    user: "10001:10001"
-    security_opt:
-      - no-new-privileges:true
-    volumes:
-      - model_cache:/models
-    environment:
-      REDIS_HOST: redis://redis:6379/0
-      ENV: production
-      MALLOC_ARENA_MAX: "2"
-      OMP_NUM_THREADS: "2"
-      PYTHONMALLOC: malloc
-    restart: on-failure
-    depends_on:
-      - redis
-
   app:
-    container_name: docling-api-cpu
+    container_name: docling-api
     build:
       context: .
       args:
@@ -57,6 +35,29 @@ services:
     restart: on-failure
     depends_on:
       - redis
+      - celery_worker
+
+  celery_worker:
+    build:
+      context: .
+      args:
+        CPU_ONLY: "true"
+    image: docling-api:cpu
+    command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    user: "10001:10001"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      REDIS_HOST: redis://redis:6379/0
+      ENV: production
+      MALLOC_ARENA_MAX: "2"
+      OMP_NUM_THREADS: "2"
+      PYTHONMALLOC: malloc
+    volumes:
+      - model_cache:/models
+    restart: on-failure
+    depends_on:
+      - redis
 
   redis:
     container_name: docling-api-redis
@@ -66,7 +67,7 @@ services:
     restart: on-failure
 
   flower:
-    container_name: docling-api-flower-cpu
+    container_name: docling-api-flower
     build:
       context: .
       args:
@@ -76,13 +77,13 @@ services:
     user: "10001:10001"
     security_opt:
       - no-new-privileges:true
+    environment:
+      REDIS_HOST: redis://redis:6379/0
+      ENV: production
     ports:
       - "5556:5555"
     volumes:
       - model_cache:/models
-    environment:
-      REDIS_HOST: redis://redis:6379/0
-      ENV: production
     restart: on-failure
     depends_on:
       - redis

@@ -132,13 +132,15 @@ curl -X POST "http://localhost:8080/documents/convert" \
 
 ## Environment Setup (Running in Docker)
 
+For detailed Docker instructions, including CPU mode, GPU mode, service URLs, verification commands, configuration, and troubleshooting, see [docs/docker.md](docs/docker.md).
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/drmingler/docling-api.git
 cd docling-api
 ```
 
-2. Create a `.env` file:
+2. Optional: create a `.env` file if you need to override the default Docker Redis connection:
 ```bash
 REDIS_HOST=redis://redis:6379/0
 ENV=production
@@ -147,13 +149,13 @@ ENV=production
 ### CPU Mode
 To start the service using CPU-only processing, use the following command. You can adjust the number of Celery workers by specifying the --scale option. In this example, 1 worker will be created:
 ```bash
-docker-compose -f docker-compose.cpu.yml up --build --scale celery_worker=1
+docker compose up --build --scale celery_worker=1
 ```
 
 ### GPU Mode (Recommend for production)
 For production, it is recommended to enable GPU acceleration, as it significantly improves performance. Use the command below to start the service with GPU support. You can also scale the number of Celery workers using the --scale option; here, 3 workers will be launched:
 ```bash
-docker-compose -f docker-compose.gpu.yml up --build --scale celery_worker=3
+docker compose -f docker-compose.gpu.yml up --build --scale celery_worker=3
 ```
 
 ## Service Components

@@ -1,0 +1,14 @@
+.git
+.idea
+.pytest_cache
+.ruff_cache
+__pycache__
+*.py[cod]
+*.iml
+.env
+.DS_Store
+build
+dist
+out
+target
+graphify-out
