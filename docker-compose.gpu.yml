@@ -1,31 +1,4 @@
 services:
-  celery_worker:
-    build:
-      context: .
-      args:
-        CPU_ONLY: "false"
-    image: docling-api:gpu
-    command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
-    user: "10001:10001"
-    security_opt:
-      - no-new-privileges:true
-    volumes:
-      - model_cache:/models
-    environment:
-      REDIS_HOST: redis://redis:6379/0
-      ENV: production
-      NVIDIA_VISIBLE_DEVICES: all
-    restart: on-failure
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    depends_on:
-      - redis
-
   app:
     container_name: docling-api-gpu
     build:
@@ -67,7 +40,31 @@ services:
               capabilities: [gpu]
     depends_on:
       - redis
-      - celery_worker
+
+  celery_worker:
+    image: docling-api:gpu
+    pull_policy: never
+    command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
+    user: "10001:10001"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - model_cache:/models
+    environment:
+      REDIS_HOST: redis://redis:6379/0
+      ENV: production
+      NVIDIA_VISIBLE_DEVICES: all
+    restart: on-failure
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      - redis
+      - app
 
   redis:
     container_name: docling-api-redis
@@ -78,11 +75,8 @@ services:
 
   flower:
     container_name: docling-api-flower-gpu
-    build:
-      context: .
-      args:
-        CPU_ONLY: "false"
     image: docling-api:gpu
+    pull_policy: never
     command: celery -A worker.celery_config flower --port=5555
     user: "10001:10001"
     security_opt:

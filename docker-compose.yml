@@ -38,11 +38,8 @@ services:
       - celery_worker
 
   celery_worker:
-    build:
-      context: .
-      args:
-        CPU_ONLY: "true"
     image: docling-api:cpu
+    pull_policy: never
     command: celery -A worker.celery_config worker --pool=solo -n worker_primary --loglevel=info
     user: "10001:10001"
     security_opt:
@@ -68,11 +65,8 @@ services:
 
   flower:
     container_name: docling-api-flower
-    build:
-      context: .
-      args:
-        CPU_ONLY: "true"
     image: docling-api:cpu
+    pull_policy: never
     command: celery -A worker.celery_config flower --port=5555
     user: "10001:10001"
     security_opt:
