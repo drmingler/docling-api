@@ -67,28 +67,62 @@ class DoclingDocumentConversion(DocumentConversionBase):
 
     @staticmethod
     def _process_document_images(conv_res) -> Tuple[str, List[ImageData]]:
+        image_placeholder = "<!-- image -->"
         images = []
         table_counter = 0
         picture_counter = 0
-        content_md = conv_res.document.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER)
+        markdown_cursor = 0
+        content_md = conv_res.document.export_to_markdown(
+            image_mode=ImageRefMode.PLACEHOLDER,
+            image_placeholder=image_placeholder,
+        )
 
-        for element, _level in conv_res.document.iterate_items():
-            if isinstance(element, (TableItem, PictureItem)) and element.image:
-                img_buffer = BytesIO()
-                element.image.pil_image.save(img_buffer, format="PNG")
+        document_items = conv_res.document.iterate_items(with_groups=True)
+        for element_index, (element, _level) in enumerate(document_items):
+            if not isinstance(element, (TableItem, PictureItem)):
+                continue
 
+            if isinstance(element, TableItem):
+                markdown_reference = conv_res.document.export_to_markdown(
+                    from_element=element_index,
+                    to_element=element_index + 1,
+                    image_mode=ImageRefMode.PLACEHOLDER,
+                    image_placeholder=image_placeholder,
+                )
+            else:
+                markdown_reference = image_placeholder
+
+            reference_index = content_md.find(markdown_reference, markdown_cursor) if markdown_reference else -1
+
+            if not element.image:
+                if reference_index >= 0:
+                    markdown_cursor = reference_index + len(markdown_reference)
+                continue
+
+            img_buffer = BytesIO()
+            element.image.pil_image.save(img_buffer, format="PNG")
+
+            if isinstance(element, TableItem):
+                table_counter += 1
+                image_name = f"table-{table_counter}.png"
+                image_type = "table"
+            else:
+                picture_counter += 1
+                image_name = f"picture-{picture_counter}.png"
+                image_type = "picture"
+
+            if reference_index >= 0:
                 if isinstance(element, TableItem):
-                    table_counter += 1
-                    image_name = f"table-{table_counter}.png"
-                    image_type = "table"
+                    replacement = f"{markdown_reference}\n\n{image_name}"
                 else:
-                    picture_counter += 1
-                    image_name = f"picture-{picture_counter}.png"
-                    image_type = "picture"
-                    content_md = content_md.replace("<!-- image -->", image_name, 1)
+                    replacement = image_name
 
-                image_bytes = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-                images.append(ImageData(type=image_type, filename=image_name, image=image_bytes))
+                reference_end = reference_index + len(markdown_reference)
+                content_md = content_md[:reference_index] + replacement + content_md[reference_end:]
+                markdown_cursor = reference_index + len(replacement)
+
+            image_bytes = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+            images.append(ImageData(type=image_type, filename=image_name, image=image_bytes))
 
         return content_md, images
 
