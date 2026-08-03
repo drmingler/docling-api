@@ -135,3 +135,7 @@ def mime_from_extension(ext):
 
 def is_file_format_supported(file_bytes: bytes, filename: str) -> bool:
     return guess_format(file_bytes, filename) in FormatToExtensions.keys()
+
+
+def mb_to_bytes(mb: int) -> int:
+    return mb * 1024 * 1024

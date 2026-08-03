@@ -1,10 +1,11 @@
 from io import BytesIO
 from typing import List
-from fastapi import APIRouter, File, HTTPException, UploadFile, Query
+
+from fastapi import APIRouter, File, Query, UploadFile
 
 from document_converter.schema import BatchConversionJobResult, ConversationJobResult, ConversionResult
 from document_converter.service import DocumentConverterService, DoclingDocumentConversion
-from document_converter.utils import is_file_format_supported
+from document_converter.upload_validation import read_and_validate_batch, read_and_validate_document
 from worker.tasks import convert_document_task, convert_documents_task
 
 router = APIRouter()
@@ -26,12 +27,10 @@ async def convert_single_document(
     extract_tables_as_images: bool = False,
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
-    file_bytes = await document.read()
-    if not is_file_format_supported(file_bytes, document.filename):
-        raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
+    filename, file_bytes = await read_and_validate_document(document)
 
     return document_converter_service.convert_document(
-        (document.filename, BytesIO(file_bytes)),
+        (filename, BytesIO(file_bytes)),
         extract_tables=extract_tables_as_images,
         image_resolution_scale=image_resolution_scale,
     )
@@ -48,12 +47,8 @@ async def convert_multiple_documents(
     extract_tables_as_images: bool = False,
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
-    doc_streams = []
-    for document in documents:
-        file_bytes = await document.read()
-        if not is_file_format_supported(file_bytes, document.filename):
-            raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
-        doc_streams.append((document.filename, BytesIO(file_bytes)))
+    document_data = await read_and_validate_batch(documents)
+    doc_streams = [(filename, BytesIO(file_bytes)) for filename, file_bytes in document_data]
 
     return document_converter_service.convert_documents(
         doc_streams,
@@ -73,12 +68,10 @@ async def create_single_document_conversion_job(
     extract_tables_as_images: bool = False,
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
-    file_bytes = await document.read()
-    if not is_file_format_supported(file_bytes, document.filename):
-        raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
+    filename, file_bytes = await read_and_validate_document(document)
 
     task = convert_document_task.delay(
-        (document.filename, file_bytes),
+        (filename, file_bytes),
         extract_tables=extract_tables_as_images,
         image_resolution_scale=image_resolution_scale,
     )
@@ -108,12 +101,7 @@ async def create_batch_conversion_job(
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
     """Create a batch conversion job for multiple documents."""
-    doc_data = []
-    for document in documents:
-        file_bytes = await document.read()
-        if not is_file_format_supported(file_bytes, document.filename):
-            raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
-        doc_data.append((document.filename, file_bytes))
+    doc_data = await read_and_validate_batch(documents)
 
     task = convert_documents_task.delay(
         doc_data,

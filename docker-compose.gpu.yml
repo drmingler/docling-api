@@ -41,6 +41,8 @@ services:
       REDIS_HOST: redis://redis:6379/0
       ENV: production
       NVIDIA_VISIBLE_DEVICES: all
+      MAX_SIZE_PER_FILE_MB: "${MAX_SIZE_PER_FILE_MB:-100}"
+      MAX_BATCH_SIZE_MB: "${MAX_BATCH_SIZE_MB:-500}"
     ports:
       - "8080:8080"
     volumes:
