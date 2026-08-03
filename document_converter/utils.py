@@ -108,7 +108,7 @@ def handle_csv_file(file: BytesIO) -> Tuple[BytesIO, Optional[str]]:
     Returns:
         Tuple[BytesIO, Optional[str]]: (processed file, error message if any)
     """
-    SUPPORTED_CSV_ENCODINGS = ['utf-8', 'latin1', 'cp1252', 'iso-8859-1']
+    SUPPORTED_CSV_ENCODINGS = ['utf-8', 'cp1252', 'latin1', 'iso-8859-1']
     for encoding in SUPPORTED_CSV_ENCODINGS:
         try:
             file.seek(0)

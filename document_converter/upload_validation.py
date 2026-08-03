@@ -1,9 +1,12 @@
 import os
 from typing import List, Optional, Tuple
 
+from dotenv import load_dotenv
 from fastapi import HTTPException, UploadFile
 
 from document_converter.utils import is_file_format_supported, mb_to_bytes
+
+load_dotenv()
 
 
 def _read_upload_limit(name: str, default: int) -> int:
