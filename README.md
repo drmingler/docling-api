@@ -71,6 +71,8 @@ Create a `.env` file in the project root:
 ```bash
 REDIS_HOST=redis://localhost:6379/0
 ENV=development
+MAX_SIZE_PER_FILE_MB=100
+MAX_BATCH_SIZE_MB=500
 ```
 
 ### 4. Start Redis Server
@@ -144,6 +146,8 @@ cd docling-api
 ```bash
 REDIS_HOST=redis://redis:6379/0
 ENV=production
+MAX_SIZE_PER_FILE_MB=100
+MAX_BATCH_SIZE_MB=500
 ```
 
 ### CPU Mode
