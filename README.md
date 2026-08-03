@@ -216,6 +216,10 @@ curl -X POST "http://localhost:8080/batch-conversion-jobs" \
 - `image_resolution_scale`: Control the resolution of extracted images (1-4)
 - `extract_tables_as_images`: Extract tables as images (true/false)
 - `CPU_ONLY`: Build argument to switch between CPU/GPU modes
+- `MAX_SIZE_PER_FILE`: Maximum size of each uploaded file in MB (default: `100`)
+- `MAX_BATCH_SIZE`: Maximum combined size of files in a batch upload in MB (default: `500`)
+
+The limits apply to both synchronous conversions and asynchronous conversion jobs. Uploads over either limit return `413 Payload Too Large`.
 
 ## Monitoring
 

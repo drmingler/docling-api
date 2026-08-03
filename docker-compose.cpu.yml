@@ -38,6 +38,8 @@ services:
       MALLOC_ARENA_MAX: "2"
       OMP_NUM_THREADS: "2"
       PYTHONMALLOC: malloc
+      MAX_SIZE_PER_FILE: "${MAX_SIZE_PER_FILE:-100}"
+      MAX_BATCH_SIZE: "${MAX_BATCH_SIZE:-500}"
     ports:
       - "8080:8080"
     volumes:
