@@ -13,8 +13,8 @@ def _read_upload_limit(name: str, default: int) -> int:
     return limit
 
 
-MAX_SIZE_PER_FILE_MB = _read_upload_limit("MAX_SIZE_PER_FILE", 100)
-MAX_BATCH_SIZE_MB = _read_upload_limit("MAX_BATCH_SIZE", 500)
+MAX_SIZE_PER_FILE_MB = _read_upload_limit("MAX_SIZE_PER_FILE_MB", 100)
+MAX_BATCH_SIZE_MB = _read_upload_limit("MAX_BATCH_SIZE_MB", 500)
 
 
 def _file_too_large_error() -> HTTPException:
