@@ -1,10 +1,11 @@
 from io import BytesIO
+import os
 from typing import List
 from fastapi import APIRouter, File, HTTPException, UploadFile, Query
 
 from document_converter.schema import BatchConversionJobResult, ConversationJobResult, ConversionResult
 from document_converter.service import DocumentConverterService, DoclingDocumentConversion
-from document_converter.utils import is_file_format_supported
+from document_converter.utils import is_file_format_supported, mb_to_bytes
 from worker.tasks import convert_document_task, convert_documents_task
 
 router = APIRouter()
@@ -12,6 +13,11 @@ router = APIRouter()
 # Could be docling or another converter as long as it implements DocumentConversionBase
 converter = DoclingDocumentConversion()
 document_converter_service = DocumentConverterService(document_converter=converter)
+MAX_SIZE_PER_FILE = int(os.getenv("MAX_SIZE_PER_FILE", 100))
+
+
+def validate_file_size(file_bytes: bytes) -> bool:
+    return len(file_bytes) > mb_to_bytes(MAX_SIZE_PER_FILE)
 
 
 # Document direct conversion endpoints
@@ -27,6 +33,11 @@ async def convert_single_document(
     image_resolution_scale: int = Query(4, ge=1, le=4),
 ):
     file_bytes = await document.read()
+    if validate_file_size(file_bytes):
+        raise HTTPException(
+            status_code=413, detail=f"File size exceeds the maximum allowed size of {MAX_SIZE_PER_FILE} MB"
+        )
+
     if not is_file_format_supported(file_bytes, document.filename):
         raise HTTPException(status_code=400, detail=f"Unsupported file format: {document.filename}")
 
